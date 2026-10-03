@@ -4,7 +4,7 @@ import {crawl, DEFAULT_EXCLUDE} from './crawl.js';
 import {bodyHtml, coverHtml, footerTemplate, headerTemplate, loadStyles} from './html.js';
 import {anchorFor, normalizeUrl} from './links.js';
 import {readDestinations, replaceFirstPage} from './pdf.js';
-import {tocEntries} from './toc.js';
+import {MAX_TOC_DEPTH, tocEntries} from './toc.js';
 
 export {DEFAULT_EXCLUDE, tocEntries};
 
@@ -22,10 +22,9 @@ export const DEFAULT_MARGIN = {top: '22mm', bottom: '20mm', left: '16mm', right:
  * @param {string[]} [o.exclude]    extra selectors removed from every page
  * @param {string} [o.format]       paper format, e.g. A4 or Letter
  * @param {object} [o.margin]       page margins {top, bottom, left, right}, CSS lengths
- * @param {Record<string, string>} [o.theme] CSS variables, e.g. {accent: '#e11d48', fontSize: '12px'} sets
- *                                  --pdf-accent and --pdf-font-size (see src/styles/*.css for the list)
- * @param {string[]} [o.css]        extra CSS files, applied after the built-in styles
- * @param {number} [o.tocDepth]     in-page heading levels in the TOC: 0 none, 1 h2, 2 h2+h3
+ * @param {string[]} [o.css]        extra CSS files, applied after the built-in styles; set --pdf-* variables
+ *                                  (see src/styles/*.css) or override any rule
+ * @param {number} [o.tocDepth]     in-page heading levels in the TOC: 0 none, 1 h2, 2 h2+h3 … 5 h2–h6
  * @param {number} [o.timeout]      per-page navigation timeout, ms
  * @param {(msg: string) => void} [o.log]
  */
@@ -39,13 +38,15 @@ export async function generatePdf({
   exclude = [],
   format = 'A4',
   margin = {},
-  theme = {},
   css = [],
   tocDepth = 2,
   timeout = 60_000,
   log = () => {},
 }) {
   if (!starts?.length) throw new Error('At least one start URL is required');
+  if (!Number.isInteger(tocDepth) || tocDepth < 0 || tocDepth > MAX_TOC_DEPTH) {
+    throw new Error(`tocDepth must be a whole number from 0 to ${MAX_TOC_DEPTH}, got ${tocDepth}`);
+  }
   margin = {...DEFAULT_MARGIN, ...margin};
 
   const browser = await puppeteer.launch({headless: true});
@@ -55,7 +56,7 @@ export async function generatePdf({
     const date = new Date().toLocaleDateString('en', {year: 'numeric', month: 'long', day: 'numeric'});
     const toc = tocEntries(sections, tocDepth);
     const styles = await loadStyles({
-      vars: {accent: site.accent, marginLeft: margin.left, marginRight: margin.right, ...theme},
+      vars: {accent: site.accent, marginLeft: margin.left, marginRight: margin.right},
       css,
     });
 

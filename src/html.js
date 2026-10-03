@@ -8,15 +8,16 @@ export function cssVars(vars) {
   return Object.entries(vars)
     .filter(([, v]) => v != null && v !== '')
     .map(([k, v]) => {
-      if (!/^[a-z][\w-]*$/i.test(k) || /[;{}<>]/.test(v)) throw new Error(`Invalid theme value: ${k}: ${v}`);
+      if (!/^[a-z][\w-]*$/i.test(k) || /[;{}<>]/.test(v)) throw new Error(`Invalid CSS value: ${k}: ${v}`);
       return `--pdf-${k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}: ${v};`;
     })
     .join(' ');
 }
 
 /**
- * Stylesheets for the document and for the header/footer: built-in CSS, then the theme
- * variables, then the user's CSS files (applied to both, so they can restyle anything).
+ * Stylesheets for the document and for the header/footer: built-in CSS, then the variables
+ * computed from the site and options, then the user's CSS files (applied to both, so they can
+ * override any variable or rule).
  */
 export async function loadStyles({vars, css = []}) {
   const read = (file) => readFile(file, 'utf8');
@@ -50,7 +51,7 @@ export function coverHtml({site, title, subtitle, date, style}) {
     <h1>${esc(title)}</h1>
     ${subtitle ? `<p class="pdf-subtitle">${esc(subtitle)}</p>` : ''}
   </div>
-  <p class="pdf-cover-meta">${esc(date)} · ${esc(new URL(site.origin).host)}</p>
+  <p class="pdf-cover-meta">${esc(date)}</p>
 </section>
 </body>
 </html>`;

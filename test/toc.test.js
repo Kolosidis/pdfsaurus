@@ -48,3 +48,28 @@ test('depth trims heading levels', () => {
   assert.equal(tocEntries(sections, 0).filter((e) => e.level > 1).length, 0);
   assert.ok(tocEntries(sections, 1).every((e) => e.level < 3));
 });
+
+test('numbers h4 to h6 at higher depths and skips headings that jump a level', () => {
+  const deep = [
+    {
+      title: 'S',
+      pages: [
+        {
+          title: 'A',
+          headings: [
+            {level: 2, id: 'a', text: 'A2'},
+            {level: 4, id: 'skip', text: 'h4 under h2'},
+            {level: 3, id: 'b', text: 'B3'},
+            {level: 4, id: 'c', text: 'C4'},
+            {level: 5, id: 'd', text: 'D5'},
+            {level: 6, id: 'e', text: 'E6'},
+            {level: 4, id: 'f', text: 'F4'},
+          ],
+        },
+      ],
+    },
+  ];
+  const rows = (depth) => tocEntries(deep, depth).filter((e) => e.level > 1).map((e) => `${e.level} ${e.num} ${e.title}`);
+  assert.deepEqual(rows(5), ['2 1.1.1 A2', '3 1.1.1.1 B3', '4 1.1.1.1.1 C4', '5 1.1.1.1.1.1 D5', '6 1.1.1.1.1.1.1 E6', '4 1.1.1.1.2 F4']);
+  assert.deepEqual(rows(3), ['2 1.1.1 A2', '3 1.1.1.1 B3', '4 1.1.1.1.1 C4', '4 1.1.1.1.2 F4']);
+});

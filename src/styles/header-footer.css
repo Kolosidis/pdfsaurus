@@ -1,12 +1,12 @@
 /* Running header and footer. Chrome renders these in an isolated context without the site's
    stylesheets, so fonts and sizes must be explicit. --pdf-accent and --pdf-margin-* are filled in
-   from the site and the `margin` option; override any variable with the `theme` option. */
+   from the site and the `margin` option; override any variable or rule with the `css` option. */
 :root {
   --pdf-accent: #2e8555;
   --pdf-muted: #8a8f98;
   --pdf-rule: #d5d8de;
   --pdf-on-accent: #fff;
-  --pdf-header-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --pdf-header-font-family: var(--pdf-font-family, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
   --pdf-header-font-size: 8px;
   --pdf-margin-left: 16mm;
   --pdf-margin-right: 16mm;

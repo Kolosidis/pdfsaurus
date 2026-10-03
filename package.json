@@ -1,10 +1,10 @@
 {
-  "name": "docusaurus-pdf-kit",
+  "name": "pdfsaurus",
   "version": "0.2.0",
   "description": "Turn any Docusaurus site into a polished PDF: cover, numbered table of contents with page numbers, bookmarks, page numbers.",
   "type": "module",
   "bin": {
-    "docusaurus-pdf-kit": "bin/cli.js"
+    "pdfsaurus": "bin/cli.js"
   },
   "exports": "./src/index.js",
   "files": [

@@ -1,6 +1,6 @@
 # Development
 
-How docusaurus-pdf-kit works, file by file. For how to use it, see [README.md](README.md).
+How pdfsaurus works, file by file. For how to use it, see [README.md](README.md).
 
 ## Setup
 
@@ -34,7 +34,7 @@ src/styles/header-footer.css  styles for the running header and footer
 test/*.test.js                unit tests for the pure modules
 ```
 
-The package ships `bin/` and `src/` (`files` in `package.json`), so the CSS files are published with the code.
+The package ships `bin/` and `src/` (`files` in `package.json`), so the CSS files are published with the code. The package entry point is `src/index.js`, which exports `generatePdf`, `tocEntries`, `DEFAULT_EXCLUDE` and `DEFAULT_MARGIN`.
 
 ## Pipeline
 
@@ -42,7 +42,7 @@ The package ships `bin/` and `src/` (`files` in `package.json`), so the CSS file
 
 1. **Crawl** (`crawl.js`). Visit every page in every section and keep a cleaned copy of its content.
 2. **Number the contents** (`toc.js`). Turn the sections into numbered TOC entries, each with the id of the element it links to.
-3. **Load styles** (`html.js`). Combine the built-in CSS, the theme variables and the user's CSS files.
+3. **Load styles** (`html.js`). Combine the built-in CSS, the variables computed from the site and options, and the user's CSS files.
 4. **Assemble the body** (`html.js`). Build one HTML document with a blank first page, the contents, and every part and page. Load it into a fresh tab.
 5. **Rewrite links** (`index.js`, `rewriteLinks`). Give every id a per-page prefix and point links to crawled pages at their in-document anchors.
 6. **Print twice** (`index.js` + `pdf.js`). The first print tells us which page every TOC target lands on. Those numbers go into the contents (`fillPageNumbers`), then the body is printed again.
@@ -68,7 +68,7 @@ Before extracting, `waitForRender` waits for every Mermaid container to contain 
 - clones the `content` element and removes `DEFAULT_EXCLUDE` plus the user's `exclude` selectors,
 - makes `href` and `src` absolute, so the HTML still works after it's moved into another document,
 - un-hides every tab panel, removes the tab bar and adds a `.pdf-tab-label` with the tab's name above each panel,
-- collects `h2[id]` and `h3[id]` headings for the TOC, skipping ones inside tab panels and admonitions,
+- collects `h2[id]` to `h6[id]` headings for the TOC, skipping ones inside tab panels and admonitions,
 - works out the section title (the active top-level sidebar category, else the active navbar link),
 - reads site-wide info from the first page: title, origin, logo, accent colour (`--ifm-color-primary`) and stylesheet URLs.
 
@@ -82,8 +82,9 @@ Before extracting, `waitForRender` waits for every Mermaid container to contain 
 | 1 | page | `1.2` | `p3` (index across *all* pages) |
 | 2 | h2 | `1.2.1` | `p3-<heading id>` |
 | 3 | h3 | `1.2.1.1` | `p3-<heading id>` |
+| 4–6 | h4–h6 | `1.2.1.1.1` … | `p3-<heading id>` |
 
-An h3 that comes before any h2 on its page is skipped, because it has no parent number. `depth` 0 lists pages only, 1 adds h2, 2 adds h3.
+The entry `level` for a heading is its heading number (h2 → 2 … h6 → 6), which is also the `.lvl-N` CSS class. A heading that skips a level, such as an h3 before any h2 or an h4 directly under an h2, is left out because it has no parent number to extend. `depth` 0 lists pages only, 1 adds h2, 2 adds h3, and so on up to 5 (h6, `MAX_TOC_DEPTH`). `generatePdf` rejects any other value.
 
 The targets must match the ids that `bodyHtml` and `rewriteLinks` create. If you change the id scheme in one place, change it in all three.
 
@@ -99,14 +100,14 @@ Each file starts with a `:root` block that sets the default `--pdf-*` variables.
 `loadStyles({vars, css})` reads both files and the user's CSS files, then returns `{document, margins}`. Each is a complete `<style>` element in this order:
 
 1. the built-in stylesheet (including its default variables),
-2. `:root { <theme variables> }`. This also has the same specificity as the defaults, so because it comes later it wins,
+2. `:root { --pdf-accent: <site colour>; --pdf-margin-left: …; --pdf-margin-right: … }`, computed by `generatePdf`. It has the same specificity as the defaults and comes later, so it wins,
 3. the user's CSS files, which go into **both** stylesheets so users can restyle the header and footer too.
 
 Any `</style` in user CSS is escaped so it can't close the tag early.
 
-`cssVars(vars)` turns `{accent, fontSize}` into `--pdf-accent: …; --pdf-font-size: …;`. It drops empty values and throws on a key that isn't an identifier, or on a value containing `; { } < >`, because those could break out of the declaration. `generatePdf` always passes `accent` (from the site) and `marginLeft`/`marginRight` (from `margin`) before the user's `theme`, so the user's values override them.
+`cssVars(vars)` turns `{accent, marginLeft}` into `--pdf-accent: …; --pdf-margin-left: …;`. It drops empty values and throws on a key that isn't an identifier, or on a value containing `; { } < >`, because those could break out of the declaration (margins come from the user). Because user CSS comes last, a user's `:root { --pdf-accent: … }` overrides the site colour.
 
-To add a new theme variable: use it in a CSS file as `var(--pdf-my-thing)`, set its default in that file's `:root` block, and add it to the README's Styling table. No JavaScript changes are needed.
+To add a new style variable: use it in a CSS file as `var(--pdf-my-thing)`, set its default in that file's `:root` block, and add it to the README's Variables table. No JavaScript changes are needed. `--pdf-font-family` is the exception to "set a default": it is left unset so `var(--pdf-font-family, <site font>)` falls back to the site's fonts.
 
 ### 4. HTML (`src/html.js`)
 
@@ -141,7 +142,7 @@ Chrome doesn't support CSS `target-counter()`, so the body is printed twice with
 
 ## CLI (`bin/cli.js`)
 
-The CLI uses `node:util` `parseArgs`. It converts `--toc-depth` and `--timeout` to numbers, turns repeated `--theme key=value` into an object, and passes everything else to `generatePdf` as it is. Exit codes: `0` success or `--help`, `2` bad arguments, `1` generation failed. To add an option, add it to `parseArgs`, to `HELP`, to the JSDoc of `generatePdf` and to the README.
+The CLI uses `node:util` `parseArgs`. Options that take a list (`--start`, `--exclude`, `--css`) are repeatable (`multiple: true`). It converts `--toc-depth` and `--timeout` to numbers and passes everything else to `generatePdf` as it is. Exit codes: `0` success or `--help`, `2` bad arguments, `1` generation failed. To add an option, add it to `parseArgs`, to `HELP`, to the JSDoc of `generatePdf` and to the README.
 
 ## Tests
 

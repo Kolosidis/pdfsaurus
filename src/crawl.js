@@ -84,7 +84,7 @@ function extractPage({content, next, exclude}) {
     });
   });
 
-  const headings = [...root.querySelectorAll('h2[id], h3[id]')]
+  const headings = [...root.querySelectorAll('h2[id], h3[id], h4[id], h5[id], h6[id]')]
     .filter((h) => !h.closest('[role="tabpanel"], .theme-admonition'))
     .map((h) => ({level: Number(h.tagName[1]), id: h.id, text: h.textContent.trim()}));
 

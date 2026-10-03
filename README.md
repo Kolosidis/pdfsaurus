@@ -1,13 +1,36 @@
-# docusaurus-pdf-kit
+# pdfsaurus
 
-Turn a Docusaurus site into one polished PDF: a cover page, a numbered table of contents (`1.2.1 Title ........ 5`) where every entry is a link with its real page number, a title page for each part, a styled header and footer, PDF bookmarks, and the site's own styling (code blocks, admonitions, Mermaid diagrams). Each tab in a tab group is printed with its label.
+Turn a Docusaurus site into one PDF that reads like a printed book.
 
-You give it the **first page of each section, in the order you want**. For each one, it follows the site's "Next" links until there is no next page, or until it reaches the first page of another section. Each section is named after its top-level sidebar category, or the active navbar item if the page isn't in a category.
+## How it works
+
+A Docusaurus site is made of separate parts: usually your **docs**, often a **blog**, and sometimes more (for example an API reference). Inside each part, pages are linked by the **Next** button at the bottom of the page. That's why you can give `--start` more than once: one start page per part, in the order you want them in the PDF. From each start page, pdfsaurus follows **Next** until the part ends.
+
+```bash
+# Only your docs
+npx pdfsaurus --start http://localhost:3000/docs/intro
+
+# Your docs, then your blog (start from the newest post)
+npx pdfsaurus --start http://localhost:3000/docs/intro --start http://localhost:3000/blog/latest-post
+```
+
+Each part gets its own title page in the PDF, named after its sidebar category or navbar item (e.g. "Docs", "Blog").
+
+## What's in the PDF
+
+- **Cover page:** your logo, title, optional subtitle and the date.
+- **Table of contents:** numbered like a book (`1.2.1 Keys ........ 5`), with clickable entries and real page numbers.
+- **A title page for each part**, like a chapter divider, e.g. "PART 1 — Guides".
+- **Header and footer** on every page except the cover: the title at the top, the date and "Page X of Y" at the bottom.
+- **Bookmarks:** the clickable outline in your PDF viewer's sidebar.
+- **Your site's own look:** code blocks, admonitions (the coloured *note*, *tip* and *warning* boxes) and Mermaid diagrams appear the same as on the website.
+- **Every tab is printed.** A tab group is Docusaurus's `<Tabs>` box, where you click a tab (for example *npm*, *yarn*, *pnpm*) to see its panel. Paper can't be clicked, so pdfsaurus prints every panel one after another, each with its tab name above it.
+- **Working links:** links between pages in the PDF jump to that place inside the PDF, and other links still open in the browser.
 
 ## Install
 
 ```bash
-npm install --save-dev docusaurus-pdf-kit
+npm install --save-dev pdfsaurus
 ```
 
 Puppeteer downloads Chrome on install. If your npm blocks install scripts, allow them with `npm approve-scripts puppeteer`, or point Puppeteer at a Chrome you already have (see below).
@@ -17,52 +40,42 @@ Puppeteer downloads Chrome on install. If your npm blocks install scripts, allow
 Start the site (`npm run build && npm run serve`, or use a deployed URL), then run:
 
 ```bash
-npx docusaurus-pdf-kit \
+npx pdfsaurus \
   --start http://localhost:3000/docs/intro \
   --start http://localhost:3000/api/overview \
-  --start http://localhost:3000/blog/2026/09/30/latest-post \
+  --start http://localhost:3000/blog/latest-post \
   --title "My Product" --subtitle "Developer documentation" \
   --out docs.pdf
 ```
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `-s, --start <url>` | required | First page of a section. Repeat it for more sections; they keep the order you give them. |
+| `-s, --start <url>` | required | First page of a part (repeatable). Parts keep the order you give them. |
 | `-o, --out <file>` | `docs.pdf` | Output file |
 | `-t, --title <text>` | site title | Title on the cover and in the page header |
 | `--subtitle <text>` | | Subtitle on the cover |
-| `--content <sel>` | `article` | CSS selector for the part of each page to keep |
+| `--content <sel>` | `article` | CSS selector for the main content of each page. Everything else, like the navbar and sidebar, is left out. |
 | `--next <sel>` | `a.pagination-nav__link--next` | CSS selector for the "next page" link |
 | `-x, --exclude <sel>` | | Extra CSS selector to remove from every page (repeatable). Breadcrumbs, the doc footer, pagination, copy buttons and heading `#` links are always removed. |
 | `--format <fmt>` | `A4` | Paper size: `A4`, `Letter`, … |
-| `--css <file>` | | Extra stylesheet applied after the built-in styles, to the pages and to the header/footer (repeatable) |
-| `--theme <key=value>` | | Set a style variable (repeatable), e.g. `--theme accent=#e11d48 --theme fontSize=12px`. See [Styling](#styling). |
-| `--toc-depth <n>` | `2` | Headings listed in the table of contents under each page: `0` none, `1` h2, `2` h2 and h3 |
+| `--css <file>` | | Your own stylesheet, applied after the built-in styles, to the pages and to the header/footer (repeatable). See [Styling](#styling). |
+| `--toc-depth <n>` | `2` | Heading levels listed in the table of contents under each page, from `0` (none) to `5`: `1` adds h2, `2` adds h3, … `5` adds h6 |
 | `--timeout <ms>` | `60000` | Timeout per page |
+
+**Repeatable** options can be given more than once, and every value is used: `--start a --start b`, `--css base.css --css extra.css`. Other options take one value; if you give one twice, the last value wins.
 
 Links between pages that are in the PDF become jumps inside the PDF. All other links stay as web links. A link to a heading that doesn't exist opens the top of its page instead. The tool also lists any links to pages on the same site that aren't in the PDF.
 
 ## Styling
 
-The built-in styles live in [`src/styles/document.css`](src/styles/document.css) (cover, contents, pages) and [`src/styles/header-footer.css`](src/styles/header-footer.css). You can change them in two ways.
-
-**Theme variables.** A `theme` key in camelCase sets the matching `--pdf-*` CSS variable:
-
-| Key | Variable | Default |
-| --- | --- | --- |
-| `accent` | `--pdf-accent` | the site's `--ifm-color-primary` |
-| `fontSize` | `--pdf-font-size` | `13px` (body text) |
-| `muted` | `--pdf-muted` | `#8a8f98` (header/footer text) |
-| `rule` | `--pdf-rule` | `#d5d8de` (footer line) |
-| `onAccent` | `--pdf-on-accent` | `#fff` (page-number text) |
-| `headerFontFamily` | `--pdf-header-font-family` | system UI font |
-| `headerFontSize` | `--pdf-header-font-size` | `8px` |
-
-**Your own CSS.** Files passed with `css` load after the built-in styles, so they can override any rule. Chrome renders the header and footer without the site's stylesheets, so give fonts and sizes there explicitly.
+The built-in styles live in [`src/styles/document.css`](src/styles/document.css) (cover, contents, pages) and [`src/styles/header-footer.css`](src/styles/header-footer.css). To change them, pass your own CSS file with `--css`. It loads after the built-in styles, so it can override any variable or rule.
 
 ```css
 /* pdf.css */
-:root { --pdf-accent: #7c3aed; }           /* same as --theme accent=#7c3aed */
+:root {
+  --pdf-accent: #7c3aed;                    /* main colour */
+  --pdf-font-size: 12px;                    /* base text size */
+}
 .pdf-cover h1 { font-size: 3rem; }          /* cover title */
 .pdf-cover::before { width: 6mm; }          /* accent bar on the cover */
 .toc-entry.lvl-1 { font-weight: 500; }      /* page rows in the contents */
@@ -72,18 +85,35 @@ The built-in styles live in [`src/styles/document.css`](src/styles/document.css)
 ```
 
 ```bash
-npx docusaurus-pdf-kit --start http://localhost:3000/docs/intro --css pdf.css
+npx pdfsaurus --start http://localhost:3000/docs/intro --css pdf.css
 ```
+
+**Variables.** The quickest changes. Set them in `:root`:
+
+| Variable | Default | Changes |
+| --- | --- | --- |
+| `--pdf-accent` | the site's `--ifm-color-primary` | main colour: cover bar, part pages, contents, header, page badge |
+| `--pdf-font-family` | the site's fonts | font of the body, headings and header/footer (code keeps its monospace font) |
+| `--pdf-font-size` | `13px` | base text size; most other sizes scale with it |
+| `--pdf-muted` | `#8a8f98` | grey text in the header/footer |
+| `--pdf-rule` | `#d5d8de` | line above the footer |
+| `--pdf-on-accent` | `#fff` | text on the page-number badge |
+| `--pdf-header-font-family` | `--pdf-font-family` if set, else the system UI font | header/footer font only |
+| `--pdf-header-font-size` | `8px` | header/footer text size |
+
+**Classes.** For anything else, target the element directly:
 
 | Element | Class |
 | --- | --- |
 | Cover | `.pdf-cover`, `.pdf-cover-main`, `.pdf-cover img`, `.pdf-cover h1`, `.pdf-subtitle`, `.pdf-cover-meta` |
-| Table of contents | `.pdf-toc`, `.toc-entry.lvl-0` (part) … `.lvl-3` (h3), `.toc-num`, `.toc-title`, `.toc-dots`, `.toc-page` |
+| Table of contents | `.pdf-toc`, `.toc-entry.lvl-0` (part), `.lvl-1` (page), `.lvl-2` (h2) … `.lvl-6` (h6), `.toc-num`, `.toc-title`, `.toc-dots`, `.toc-page` |
 | Part title page | `.pdf-part`, `.pdf-part span`, `.pdf-part h1` |
 | Each site page | `.pdf-page` |
 | Tab label | `.pdf-tab-label` |
 | Header | `.pdf-header`, `.pdf-header-row`, `.pdf-header-title`, `.pdf-header-subtitle` |
 | Footer | `.pdf-footer`, `.pdf-footer-row`, `.pdf-footer-date`, `.pdf-page-number` |
+
+Chrome renders the header and footer without the site's stylesheets, so a web font used there needs its own `@font-face` in your CSS. Some contents rules use `!important` (link colours); to override them, use `!important` too.
 
 Page margins are set with the `margin` API option (see below). The header and footer follow the left and right margins.
 
@@ -94,7 +124,7 @@ Chrome has no CSS `target-counter()`, so the body is printed twice. After the fi
 ## Programmatic API
 
 ```js
-import {generatePdf} from 'docusaurus-pdf-kit';
+import {generatePdf} from 'pdfsaurus';
 
 await generatePdf({
   starts: ['http://localhost:3000/docs/intro'],
@@ -102,7 +132,6 @@ await generatePdf({
   title: 'My Product',
   exclude: ['.my-feedback-widget'],
   margin: {left: '20mm', right: '20mm'},
-  theme: {accent: '#e11d48', fontSize: '12px'},
   css: ['./pdf.css'],
   log: console.log,
 });
@@ -112,18 +141,17 @@ await generatePdf({
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `theme` | `{}` | Style variables, e.g. `{accent: '#e11d48'}`. See [Styling](#styling). |
 | `margin` | `{top: '22mm', bottom: '20mm', left: '16mm', right: '16mm'}` | Page margins. You can set only some sides; the others keep their defaults. |
 | `log` | no output | Called with progress messages and warnings |
 
-It resolves to `{out, sections: [{title, pages: [url, ...]}]}`. The package also exports `tocEntries`, `DEFAULT_EXCLUDE` and `DEFAULT_MARGIN`.
+It resolves to `{out, sections: [{title, pages: [url, ...]}]}`.
 
 ## Troubleshooting
 
 **`No usable sandbox!` on Ubuntu 23.10+.** AppArmor blocks Puppeteer's downloaded Chrome. Point Puppeteer at the Chrome installed on your system instead:
 
 ```bash
-PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome npx docusaurus-pdf-kit ...
+PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome npx pdfsaurus ...
 ```
 
 ## Contributing
