@@ -1,0 +1,32 @@
+{
+  "name": "docusaurus-pdf-kit",
+  "version": "0.2.0",
+  "description": "Turn any Docusaurus site into a polished PDF: cover, numbered table of contents with page numbers, bookmarks, page numbers.",
+  "type": "module",
+  "bin": {
+    "docusaurus-pdf-kit": "bin/cli.js"
+  },
+  "exports": "./src/index.js",
+  "files": [
+    "bin",
+    "src"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "docusaurus",
+    "pdf",
+    "documentation",
+    "puppeteer"
+  ],
+  "author": "Stefanos Kolosidis",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "puppeteer": "^25.12.0"
+  }
+}
