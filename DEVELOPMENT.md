@@ -9,7 +9,7 @@ npm install
 npm test          # node --test, no browser needed
 ```
 
-Requires Node 20+. The only dependencies are `puppeteer` (crawling and printing) and `pdf-lib` (PDF post-processing).
+Requires Node 24+ (`.nvmrc`; run `nvm use`). The only dependencies are `puppeteer` (crawling and printing) and `pdf-lib` (PDF post-processing).
 
 To try a change end to end, run the CLI against any Docusaurus site:
 

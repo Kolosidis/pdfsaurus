@@ -26,7 +26,7 @@
   "author": "Stefanos Kolosidis",
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "dependencies": {
     "pdf-lib": "^1.17.1",
