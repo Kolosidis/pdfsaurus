@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import {parseArgs} from 'node:util';
-import {generatePdf} from '../src/index.js';
+import { parseArgs } from "node:util";
+import { generatePdf } from "../src/index.js";
 
 const HELP = `Usage: pdfsaurus --start <url> [--start <url> ...] [options]
 
@@ -24,20 +24,20 @@ Options:
 
 let values;
 try {
-  ({values} = parseArgs({
+  ({ values } = parseArgs({
     options: {
-      start: {type: 'string', short: 's', multiple: true},
-      out: {type: 'string', short: 'o'},
-      title: {type: 'string', short: 't'},
-      subtitle: {type: 'string'},
-      content: {type: 'string'},
-      next: {type: 'string'},
-      exclude: {type: 'string', short: 'x', multiple: true},
-      format: {type: 'string'},
-      css: {type: 'string', multiple: true},
-      'toc-depth': {type: 'string'},
-      timeout: {type: 'string'},
-      help: {type: 'boolean', short: 'h'},
+      start: { type: "string", short: "s", multiple: true },
+      out: { type: "string", short: "o" },
+      title: { type: "string", short: "t" },
+      subtitle: { type: "string" },
+      content: { type: "string" },
+      next: { type: "string" },
+      exclude: { type: "string", short: "x", multiple: true },
+      format: { type: "string" },
+      css: { type: "string", multiple: true },
+      "toc-depth": { type: "string" },
+      timeout: { type: "string" },
+      help: { type: "boolean", short: "h" },
     },
   }));
 } catch (err) {
@@ -50,7 +50,7 @@ if (values.help || !values.start) {
   process.exit(values.help ? 0 : 2);
 }
 
-const {start, timeout, 'toc-depth': tocDepth, ...rest} = values;
+const { start, timeout, "toc-depth": tocDepth, ...rest } = values;
 try {
   await generatePdf({
     ...rest,

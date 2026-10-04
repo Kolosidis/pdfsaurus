@@ -1,0 +1,43 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  # 1. Known vulnerabilities in dependencies (like `yarn audit` / bundler-audit).
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # Reads package-lock.json only; fails on high or critical advisories.
+      - run: npm audit --audit-level=high
+
+  # 2. Lint and formatting (like RuboCop).
+  lint:
+    needs: audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true" # linting doesn't need Chrome
+      - run: npm run lint
+      - run: npm run format:check
+
+  # 3. Specs.
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test

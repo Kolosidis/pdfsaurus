@@ -3,7 +3,7 @@
 /** Canonical form of a page URL: no hash, no query, no trailing slash. */
 export function normalizeUrl(url) {
   const u = new URL(url);
-  const path = u.pathname.replace(/\/+$/, '') || '/';
+  const path = u.pathname.replace(/\/+$/, "") || "/";
   return `${u.origin}${path}`;
 }
 

@@ -6,21 +6,61 @@
   --pdf-muted: #8a8f98;
   --pdf-rule: #d5d8de;
   --pdf-on-accent: #fff;
-  --pdf-header-font-family: var(--pdf-font-family, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
+  --pdf-header-font-family: var(
+    --pdf-font-family,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif
+  );
   --pdf-header-font-size: 8px;
   --pdf-margin-left: 16mm;
   --pdf-margin-right: 16mm;
 }
 
-.pdf-header, .pdf-footer {
-  font-family: var(--pdf-header-font-family); font-size: var(--pdf-header-font-size); width: 100%;
-  padding: 0 var(--pdf-margin-right) 0 var(--pdf-margin-left); box-sizing: border-box;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+.pdf-header,
+.pdf-footer {
+  font-family: var(--pdf-header-font-family);
+  font-size: var(--pdf-header-font-size);
+  width: 100%;
+  padding: 0 var(--pdf-margin-right) 0 var(--pdf-margin-left);
+  box-sizing: border-box;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
-.pdf-header { margin-top: 9mm; }
-.pdf-footer { margin-bottom: 7mm; }
-.pdf-header-row, .pdf-footer-row { display: flex; justify-content: space-between; color: var(--pdf-muted); }
-.pdf-header-row { align-items: flex-end; padding-bottom: 1.6mm; border-bottom: 0.8px solid var(--pdf-accent); }
-.pdf-header-title { color: var(--pdf-accent); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
-.pdf-footer-row { align-items: center; padding-top: 1.6mm; border-top: 0.6px solid var(--pdf-rule); }
-.pdf-page-number { background: var(--pdf-accent); color: var(--pdf-on-accent); font-weight: 600; border-radius: 9px; padding: 1px 8px; }
+.pdf-header {
+  margin-top: 9mm;
+}
+.pdf-footer {
+  margin-bottom: 7mm;
+}
+.pdf-header-row,
+.pdf-footer-row {
+  display: flex;
+  justify-content: space-between;
+  color: var(--pdf-muted);
+}
+.pdf-header-row {
+  align-items: flex-end;
+  padding-bottom: 1.6mm;
+  border-bottom: 0.8px solid var(--pdf-accent);
+}
+.pdf-header-title {
+  color: var(--pdf-accent);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.pdf-footer-row {
+  align-items: center;
+  padding-top: 1.6mm;
+  border-top: 0.6px solid var(--pdf-rule);
+}
+.pdf-page-number {
+  background: var(--pdf-accent);
+  color: var(--pdf-on-accent);
+  font-weight: 600;
+  border-radius: 9px;
+  padding: 1px 8px;
+}

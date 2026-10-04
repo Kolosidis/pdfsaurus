@@ -57,7 +57,7 @@ For each start URL it builds one section, following `next` (the "Next" link sele
 
 - there is no next link,
 - the next URL was already visited (this prevents loops and duplicate pages), or
-- the next URL is the start URL of a *different* section. That page belongs to that section, even if it comes later in the order.
+- the next URL is the start URL of a _different_ section. That page belongs to that section, even if it comes later in the order.
 
 URLs are compared with `normalizeUrl`, so `/docs/intro`, `/docs/intro/` and `/docs/intro#x` count as the same page. Both the requested URL and the URL after redirects are marked as visited.
 
@@ -76,13 +76,13 @@ Before extracting, `waitForRender` waits for every Mermaid container to contain 
 
 `tocEntries(sections, depth)` is a pure function. It returns a flat list of `{level, num, title, target}`:
 
-| Level | What | `num` | `target` |
-| --- | --- | --- | --- |
-| 0 | part (section) | `1` | `part1` |
-| 1 | page | `1.2` | `p3` (index across *all* pages) |
-| 2 | h2 | `1.2.1` | `p3-<heading id>` |
-| 3 | h3 | `1.2.1.1` | `p3-<heading id>` |
-| 4–6 | h4–h6 | `1.2.1.1.1` … | `p3-<heading id>` |
+| Level | What           | `num`         | `target`                        |
+| ----- | -------------- | ------------- | ------------------------------- |
+| 0     | part (section) | `1`           | `part1`                         |
+| 1     | page           | `1.2`         | `p3` (index across _all_ pages) |
+| 2     | h2             | `1.2.1`       | `p3-<heading id>`               |
+| 3     | h3             | `1.2.1.1`     | `p3-<heading id>`               |
+| 4–6   | h4–h6          | `1.2.1.1.1` … | `p3-<heading id>`               |
 
 The entry `level` for a heading is its heading number (h2 → 2 … h6 → 6), which is also the `.lvl-N` CSS class. A heading that skips a level, such as an h3 before any h2 or an h4 directly under an h2, is left out because it has no parent number to extend. `depth` 0 lists pages only, 1 adds h2, 2 adds h3, and so on up to 5 (h6, `MAX_TOC_DEPTH`). `generatePdf` rejects any other value.
 
@@ -138,7 +138,9 @@ Chrome doesn't support CSS `target-counter()`, so the body is printed twice with
 
 ### 7. Cover (`src/pdf.js`)
 
-`replaceFirstPage(bodyBytes, coverBytes)` embeds the cover's first page as a form XObject, draws it onto a new page 0 of the body's size, and removes the old blank page. Every other page object stays the same, so links, bookmarks (the outline) and tagged structure still work. Because the cover takes the place of a real page, footer numbers match the page numbers shown in a PDF viewer.
+`finishPdf(bodyBytes, coverBytes, outline)` embeds the cover's first page as a form XObject, draws it onto a new page 0 of the body's size, and removes the old blank page. Every other page object stays the same, so links, named destinations and tagged structure still work. Because the cover takes the place of a real page, footer numbers match the page numbers shown in a PDF viewer.
+
+It then writes the bookmarks (the outline) from the TOC entries, each pointing at the named destination Chrome emitted for its target. Chrome's own outline (`outline: true`) is not used: on real Docusaurus pages it repeats heading text ("IntroductionIntroduction") and drops the space at line breaks.
 
 ## CLI (`bin/cli.js`)
 
