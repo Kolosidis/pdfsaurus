@@ -18,7 +18,8 @@ Options:
   -x, --exclude <sel>    extra selector to strip from pages (repeatable)
       --format <fmt>     paper format: A4, Letter, ... (default: A4)
       --css <file>       extra stylesheet applied after the built-in styles (repeatable)
-      --toc-depth <n>    headings in the TOC: 0 pages only, 1 +h2, 2 +h3 ... 5 +h6 (default: 2)
+      --toc-depth <n>    cap heading nesting in the TOC: 0 pages only, 1 top level ... 5
+                         (default: no cap, each page lists what the site's own TOC lists)
       --timeout <ms>     per-page timeout (default: 60000)
   -h, --help             show this help`;
 

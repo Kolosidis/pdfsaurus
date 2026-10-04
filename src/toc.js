@@ -4,12 +4,13 @@ export const MAX_TOC_DEPTH = 5; // h2..h6
 
 /**
  * Flatten sections → numbered TOC entries.
- * Levels: 0 part ("1"), 1 page ("1.2"), then the heading level: 2 h2 ("1.2.1"), 3 h3 ("1.2.1.1") … 6 h6.
- * depth: how many in-page heading levels to include (0 = pages only, 1 = +h2, 2 = +h3 … 5 = +h6).
- * A heading that skips a level (h4 right under an h2) has no number to hang off and is left out.
+ * Levels: 0 part ("1"), 1 page ("1.2"), then 2 + how deep the heading is nested ("1.2.1", "1.2.1.1" …).
+ * Headings nest like Docusaurus's own TOC: under the closest earlier heading of a higher rank,
+ * so an h4 right under an h2 is its child, and an h3 before any h2 sits at the top.
+ * depth: how many nesting levels of headings to include (0 = pages only, 1 = top level … 5).
  * Targets match the ids in the assembled document: part{i}, p{n}, p{n}-{headingId}.
  */
-export function tocEntries(sections, depth = 2) {
+export function tocEntries(sections, depth = MAX_TOC_DEPTH) {
   const out = [];
   let n = 0;
   sections.forEach((section, si) => {
@@ -24,17 +25,18 @@ export function tocEntries(sections, depth = 2) {
       const pageNum = `${partNum}.${pi + 1}`;
       const pageId = `p${n++}`;
       out.push({ level: 1, num: pageNum, title: page.title, target: pageId });
-      // counts[k] = running number of the current heading at level k (2..6); counts[1] = the page itself.
-      const counts = [0, 1, 0, 0, 0, 0, 0];
+      const open = []; // heading levels (2..6) of the current heading's ancestors, then itself
+      const counts = []; // counts[d] = running number at nesting depth d
       for (const h of page.headings ?? []) {
-        if (h.level < 2 || h.level > depth + 1 || !counts[h.level - 1])
-          continue;
-        counts[h.level]++;
-        counts.fill(0, h.level + 1);
-        const num = [pageNum, ...counts.slice(2, h.level + 1)].join(".");
+        while (open.length && open.at(-1) >= h.level) open.pop();
+        const d = open.length;
+        open.push(h.level);
+        if (d >= depth) continue;
+        counts[d] = (counts[d] ?? 0) + 1;
+        counts.length = d + 1;
         out.push({
-          level: h.level,
-          num,
+          level: d + 2,
+          num: [pageNum, ...counts].join("."),
           title: h.text,
           target: `${pageId}-${h.id}`,
         });

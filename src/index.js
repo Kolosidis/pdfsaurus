@@ -35,7 +35,8 @@ export const DEFAULT_MARGIN = {
  * @param {object} [o.margin]       page margins {top, bottom, left, right}, CSS lengths
  * @param {string[]} [o.css]        extra CSS files, applied after the built-in styles; set --pdf-* variables
  *                                  (see src/styles/*.css) or override any rule
- * @param {number} [o.tocDepth]     in-page heading levels in the TOC: 0 none, 1 h2, 2 h2+h3 … 5 h2–h6
+ * @param {number} [o.tocDepth]     cap on heading nesting in the TOC: 0 none, 1 top level … 5 (default:
+ *                                  no cap, so each page lists what the site's own TOC lists)
  * @param {number} [o.timeout]      per-page navigation timeout, ms
  * @param {(msg: string) => void} [o.log]
  */
@@ -50,7 +51,7 @@ export async function generatePdf({
   format = "A4",
   margin = {},
   css = [],
-  tocDepth = 2,
+  tocDepth = MAX_TOC_DEPTH,
   timeout = 60_000,
   log = () => {},
 }) {

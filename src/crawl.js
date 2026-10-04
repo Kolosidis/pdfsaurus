@@ -18,6 +18,8 @@ export async function crawl(
 ) {
   const page = await browser.newPage();
   page.setDefaultTimeout(timeout);
+  // Desktop width, so Docusaurus renders its desktop TOC (read by extractPage).
+  await page.setViewport({ width: 1440, height: 900 });
   await page.emulateMediaFeatures([
     { name: "prefers-color-scheme", value: "light" },
   ]);
@@ -35,7 +37,7 @@ export async function crawl(
   let site = null;
 
   for (const [si, start] of starts.entries()) {
-    const section = { title: "", pages: [] };
+    let section = { title: "", group: "", pages: [] };
     let url = start;
     // A section ends when "Next" runs out, loops, or reaches the start of another section.
     while (
@@ -58,7 +60,19 @@ export async function crawl(
         exclude: [...DEFAULT_EXCLUDE, ...exclude],
       });
       site ??= data.site;
-      section.title ||= data.sectionTitle || data.title;
+      url = data.nextUrl;
+      // A category's generated index only lists cards for the pages that follow it: skip it.
+      if (data.generatedIndex) {
+        log(`  (skipped category index: ${page.url()})`);
+        continue;
+      }
+      // Each top-level sidebar entry (e.g. "Overview", "Orientation") becomes its own part.
+      if (section.pages.length && data.group && data.group !== section.group) {
+        sections.push(endSection(section, log));
+        section = { title: "", group: "", pages: [] };
+      }
+      section.group ||= data.group;
+      section.title ||= data.group || data.navTitle || data.title;
       section.pages.push({
         url: page.url(),
         title: data.title,
@@ -66,13 +80,18 @@ export async function crawl(
         html: data.html,
       });
       log(`  ${section.pages.length}. ${data.title}`);
-      url = data.nextUrl;
     }
-    log(`Section "${section.title}": ${section.pages.length} page(s)`);
-    sections.push(section);
+    if (section.pages.length) sections.push(endSection(section, log));
   }
   await page.close();
+  if (!sections.length)
+    throw new Error("No pages to print: every page was skipped");
   return { sections, site };
+}
+
+function endSection({ title, pages }, log) {
+  log(`Section "${title}": ${pages.length} page(s)`);
+  return { title, pages };
 }
 
 /** Wait for client-side rendering that networkidle doesn't cover (Mermaid, web fonts). */
@@ -115,14 +134,24 @@ function extractPage({ content, next, exclude }) {
     });
   });
 
+  // Same headings as the site's own TOC (it honours toc_min/max_heading_level). Pages without one
+  // (hide_table_of_contents, or a custom theme): every h2–h6 outside tab panels and admonitions.
+  const tocIds = [
+    ...document.querySelectorAll('.theme-doc-toc-desktop a[href^="#"]'),
+  ].map((a) => decodeURIComponent(a.hash.slice(1)));
   const headings = [
     ...root.querySelectorAll("h2[id], h3[id], h4[id], h5[id], h6[id]"),
   ]
-    .filter((h) => !h.closest('[role="tabpanel"], .theme-admonition'))
+    .filter((h) =>
+      tocIds.length
+        ? tocIds.includes(h.id)
+        : !h.closest('[role="tabpanel"], .theme-admonition'),
+    )
     .map((h) => ({
       level: Number(h.tagName[1]),
       id: h.id,
-      text: h.textContent.trim(),
+      // Docusaurus puts a zero-width space before the "#" link.
+      text: h.textContent.replace(/\u200b/g, "").trim(),
     }));
 
   const logo = document.querySelector(".navbar__logo img");
@@ -130,15 +159,21 @@ function extractPage({ content, next, exclude }) {
     html: root.outerHTML,
     title: root.querySelector("h1, h2")?.textContent.trim() || document.title,
     headings,
-    // Section name: the top-level sidebar category this page sits in, else the active navbar item.
-    sectionTitle:
-      [...document.querySelectorAll(".theme-doc-sidebar-item-category-level-1")]
-        .find((li) => li.querySelector('a[aria-current="page"]'))
+    // The top-level sidebar entry (category or plain link) this page sits in.
+    group:
+      document
+        .querySelector('.theme-doc-sidebar-menu a[aria-current="page"]')
+        ?.closest(
+          ".theme-doc-sidebar-item-category-level-1, .theme-doc-sidebar-item-link-level-1",
+        )
         ?.querySelector(".menu__link")
-        ?.textContent.trim() ||
-      document.querySelector(".navbar__link--active")?.textContent.trim() ||
-      "",
+        ?.textContent.trim() || "",
+    // Part name for pages outside any sidebar (e.g. the blog).
+    navTitle:
+      document.querySelector(".navbar__link--active")?.textContent.trim() || "",
     nextUrl: document.querySelector(next)?.href ?? null,
+    // Category page made by Docusaurus (`link: {type: 'generated-index'}`), not a written doc.
+    generatedIndex: !!document.querySelector('[class*="generatedIndexPage"]'),
     site: {
       title:
         document.querySelector(".navbar__title")?.textContent.trim() ||

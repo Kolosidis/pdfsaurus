@@ -14,7 +14,7 @@ npx pdfsaurus --start http://localhost:3000/docs/intro
 npx pdfsaurus --start http://localhost:3000/docs/intro --start http://localhost:3000/blog/latest-post
 ```
 
-Each part gets its own title page in the PDF, named after its sidebar category or navbar item (e.g. "Docs", "Blog").
+Every top-level sidebar entry (a category like "Getting Started", or a top-level page) becomes its own part, with its own title page. Pages outside a sidebar, like the blog, form one part per start URL, named after the active navbar item (e.g. "Blog"). Category pages that Docusaurus generates (the grid of cards linking to the pages in a category) are left out, since those pages follow right after.
 
 ## What's in the PDF
 
@@ -48,19 +48,19 @@ npx pdfsaurus \
   --out docs.pdf
 ```
 
-| Option                | Default                        | Description                                                                                                                                                |
-| --------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-s, --start <url>`   | required                       | First page of a part (repeatable). Parts keep the order you give them.                                                                                     |
-| `-o, --out <file>`    | `docs.pdf`                     | Output file                                                                                                                                                |
-| `-t, --title <text>`  | site title                     | Title on the cover and in the page header                                                                                                                  |
-| `--subtitle <text>`   |                                | Subtitle on the cover                                                                                                                                      |
-| `--content <sel>`     | `article`                      | CSS selector for the main content of each page. Everything else, like the navbar and sidebar, is left out.                                                 |
-| `--next <sel>`        | `a.pagination-nav__link--next` | CSS selector for the "next page" link                                                                                                                      |
-| `-x, --exclude <sel>` |                                | Extra CSS selector to remove from every page (repeatable). Breadcrumbs, the doc footer, pagination, copy buttons and heading `#` links are always removed. |
-| `--format <fmt>`      | `A4`                           | Paper size: `A4`, `Letter`, …                                                                                                                              |
-| `--css <file>`        |                                | Your own stylesheet, applied after the built-in styles, to the pages and to the header/footer (repeatable). See [Styling](#styling).                       |
-| `--toc-depth <n>`     | `2`                            | Heading levels listed in the table of contents under each page, from `0` (none) to `5`: `1` adds h2, `2` adds h3, … `5` adds h6                            |
-| `--timeout <ms>`      | `60000`                        | Timeout per page                                                                                                                                           |
+| Option                | Default                        | Description                                                                                                                                                                                                                                           |
+| --------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-s, --start <url>`   | required                       | First page of a part (repeatable). Parts keep the order you give them.                                                                                                                                                                                |
+| `-o, --out <file>`    | `docs.pdf`                     | Output file                                                                                                                                                                                                                                           |
+| `-t, --title <text>`  | site title                     | Title on the cover and in the page header                                                                                                                                                                                                             |
+| `--subtitle <text>`   |                                | Subtitle on the cover                                                                                                                                                                                                                                 |
+| `--content <sel>`     | `article`                      | CSS selector for the main content of each page. Everything else, like the navbar and sidebar, is left out.                                                                                                                                            |
+| `--next <sel>`        | `a.pagination-nav__link--next` | CSS selector for the "next page" link                                                                                                                                                                                                                 |
+| `-x, --exclude <sel>` |                                | Extra CSS selector to remove from every page (repeatable). Breadcrumbs, the doc footer, pagination, copy buttons and heading `#` links are always removed.                                                                                            |
+| `--format <fmt>`      | `A4`                           | Paper size: `A4`, `Letter`, …                                                                                                                                                                                                                         |
+| `--css <file>`        |                                | Your own stylesheet, applied after the built-in styles, to the pages and to the header/footer (repeatable). See [Styling](#styling).                                                                                                                  |
+| `--toc-depth <n>`     | all                            | Under each page, the table of contents lists the same headings as the site's own table of contents (so `toc_max_heading_level` applies). This caps how deep they go, from `0` (pages only) to `5`: `1` keeps the top level, `2` one level below it, … |
+| `--timeout <ms>`      | `60000`                        | Timeout per page                                                                                                                                                                                                                                      |
 
 **Repeatable** options can be given more than once, and every value is used: `--start a --start b`, `--css base.css --css extra.css`. Other options take one value; if you give one twice, the last value wins.
 

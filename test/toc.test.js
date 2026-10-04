@@ -38,10 +38,11 @@ test("numbers parts, pages and headings with matching targets", () => {
     "0 1 Guides #part1",
     "1 1.1 Intro #p0",
     "1 1.2 Auth #p1",
-    "2 1.2.1 Keys #p1-keys",
-    "3 1.2.1.1 Scoped #p1-scoped",
-    "2 1.2.2 Errors #p1-errors",
-    "3 1.2.2.1 401 #p1-e401",
+    "2 1.2.1 Orphan h3 #p1-orphan",
+    "2 1.2.2 Keys #p1-keys",
+    "3 1.2.2.1 Scoped #p1-scoped",
+    "2 1.2.3 Errors #p1-errors",
+    "3 1.2.3.1 401 #p1-e401",
     "0 2 API #part2",
     "1 2.1 Overview #p2",
     "2 2.1.1 Base URL #p2-base",
@@ -75,7 +76,7 @@ test("depth trims heading levels", () => {
   assert.ok(tocEntries(sections, 1).every((e) => e.level < 3));
 });
 
-test("numbers h4 to h6 at higher depths and skips headings that jump a level", () => {
+test("nests headings like Docusaurus, including ones that jump a level", () => {
   const deep = [
     {
       title: "S",
@@ -101,16 +102,18 @@ test("numbers h4 to h6 at higher depths and skips headings that jump a level", (
       .map((e) => `${e.level} ${e.num} ${e.title}`);
   assert.deepEqual(rows(5), [
     "2 1.1.1 A2",
-    "3 1.1.1.1 B3",
-    "4 1.1.1.1.1 C4",
-    "5 1.1.1.1.1.1 D5",
-    "6 1.1.1.1.1.1.1 E6",
-    "4 1.1.1.1.2 F4",
+    "3 1.1.1.1 h4 under h2",
+    "3 1.1.1.2 B3",
+    "4 1.1.1.2.1 C4",
+    "5 1.1.1.2.1.1 D5",
+    "6 1.1.1.2.1.1.1 E6",
+    "4 1.1.1.2.2 F4",
   ]);
   assert.deepEqual(rows(3), [
     "2 1.1.1 A2",
-    "3 1.1.1.1 B3",
-    "4 1.1.1.1.1 C4",
-    "4 1.1.1.1.2 F4",
+    "3 1.1.1.1 h4 under h2",
+    "3 1.1.1.2 B3",
+    "4 1.1.1.2.1 C4",
+    "4 1.1.1.2.2 F4",
   ]);
 });

@@ -53,11 +53,15 @@ The package ships `bin/` and `src/` (`files` in `package.json`), so the CSS file
 
 `crawl(browser, options)` opens one tab and forces the light theme: it emulates `prefers-color-scheme: light` and sets `localStorage.theme` before any page script runs.
 
-For each start URL it builds one section, following `next` (the "Next" link selector) page by page. A section stops when:
+For each start URL it follows `next` (the "Next" link selector) page by page. The crawl for a start URL stops when:
 
 - there is no next link,
 - the next URL was already visited (this prevents loops and duplicate pages), or
-- the next URL is the start URL of a _different_ section. That page belongs to that section, even if it comes later in the order.
+- the next URL is another start URL. That page belongs to that start URL's crawl, even if it comes later in the order.
+
+Category index pages that Docusaurus generates (`link: {type: 'generated-index'}`, detected by their `generatedIndexPage` wrapper) are skipped, but their "Next" link is still followed: they only hold a card for each page that comes right after them. If nothing is left to print, the crawl throws.
+
+Along the way, the pages are split into sections (the PDF's parts): a new section begins whenever a page's top-level sidebar entry differs from the previous page's. Pages without one (e.g. the blog) stay in the current section, so a start URL with no sidebar yields a single section.
 
 URLs are compared with `normalizeUrl`, so `/docs/intro`, `/docs/intro/` and `/docs/intro#x` count as the same page. Both the requested URL and the URL after redirects are marked as visited.
 
@@ -68,8 +72,8 @@ Before extracting, `waitForRender` waits for every Mermaid container to contain 
 - clones the `content` element and removes `DEFAULT_EXCLUDE` plus the user's `exclude` selectors,
 - makes `href` and `src` absolute, so the HTML still works after it's moved into another document,
 - un-hides every tab panel, removes the tab bar and adds a `.pdf-tab-label` with the tab's name above each panel,
-- collects `h2[id]` to `h6[id]` headings for the TOC, skipping ones inside tab panels and admonitions,
-- works out the section title (the active top-level sidebar category, else the active navbar link),
+- collects the headings for the TOC: the ones the site's own TOC lists (see below), else every `h2[id]`–`h6[id]` outside tab panels and admonitions,
+- finds the page's top-level sidebar entry (`group`, a level-1 category or link containing the current page) and the active navbar link (`navTitle`, the section title when there is no group),
 - reads site-wide info from the first page: title, origin, logo, accent colour (`--ifm-color-primary`) and stylesheet URLs.
 
 ### 2. Table of contents (`src/toc.js`)
@@ -80,11 +84,13 @@ Before extracting, `waitForRender` waits for every Mermaid container to contain 
 | ----- | -------------- | ------------- | ------------------------------- |
 | 0     | part (section) | `1`           | `part1`                         |
 | 1     | page           | `1.2`         | `p3` (index across _all_ pages) |
-| 2     | h2             | `1.2.1`       | `p3-<heading id>`               |
-| 3     | h3             | `1.2.1.1`     | `p3-<heading id>`               |
-| 4–6   | h4–h6          | `1.2.1.1.1` … | `p3-<heading id>`               |
+| 2     | top heading    | `1.2.1`       | `p3-<heading id>`               |
+| 3     | nested once    | `1.2.1.1`     | `p3-<heading id>`               |
+| 4–6   | nested deeper  | `1.2.1.1.1` … | `p3-<heading id>`               |
 
-The entry `level` for a heading is its heading number (h2 → 2 … h6 → 6), which is also the `.lvl-N` CSS class. A heading that skips a level, such as an h3 before any h2 or an h4 directly under an h2, is left out because it has no parent number to extend. `depth` 0 lists pages only, 1 adds h2, 2 adds h3, and so on up to 5 (h6, `MAX_TOC_DEPTH`). `generatePdf` rejects any other value.
+A heading's entry `level` is 2 plus how deeply it is nested, which is also the `.lvl-N` CSS class. Headings nest the way Docusaurus's own TOC nests them: each one goes under the closest earlier heading of a higher rank. So an h4 directly under an h2 becomes the h2's child (level 3), and an h3 before any h2 sits at the top (level 2). On a normal page this means h2 → 2, h3 → 3 and so on. `depth` caps the nesting: 0 lists pages only, 1 the top level, up to 5 (`MAX_TOC_DEPTH`, the default). `generatePdf` rejects any other value.
+
+Which headings a page has is decided in `extractPage`: the ones the site's desktop TOC links to (`.theme-doc-toc-desktop`), which already honours `toc_min_heading_level`/`toc_max_heading_level`. The crawl tab uses a desktop-sized viewport so that TOC is rendered. A page without one falls back to every `h2`–`h6` outside tab panels and admonitions.
 
 The targets must match the ids that `bodyHtml` and `rewriteLinks` create. If you change the id scheme in one place, change it in all three.
 
